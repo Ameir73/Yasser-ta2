@@ -2090,9 +2090,7 @@ async def update_crypto_market_data():
                         record.update({
                             f"{tf}_pattern_name": pattern_data.get("name", "لا يوجد"),
                             f"{tf}_pattern_class": pattern_data.get("class", "لا يوجد"),
-                            f"{tf}_pattern_breakout": float(pattern_data.get("breakout", 0.0)),
-                            f"{tf}_pattern_target": float(pattern_data.get("target", 0.0)),
-                            f"{tf}_pattern_sl": float(pattern_data.get("sl", 0.0))
+                            
                         })
 
                         # 🌟 [ الإضافة الجديدة: حقن الأعمدة الجديدة الخاصة بالمحرك عند فريم الساعة كمرجع رئيسي ] 🌟

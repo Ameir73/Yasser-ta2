@@ -1918,6 +1918,37 @@ async def async_manual_upsert1(table_name, records, retry_count=0, max_retries=3
         logging.error(f"⚠️ خطأ تقني أثناء محاولة الرفع إلى {table_name}: {str(e)}")
         return False
 
+async def async_manual_upsert(table_name, records):
+    headers = {
+        "apikey": SUPABASE_KEY,
+        "Authorization": f"Bearer {SUPABASE_KEY}",
+        "Content-Type": "application/json",
+        "Prefer": "resolution=merge-duplicates"
+    }
+    endpoint = f"{SUPABASE_URL}/rest/v1/{table_name}"
+    
+    # ⏱️ وضع حد زمني ذكي (15 ثانية للاتصال، 30 ثانية للرفع)
+    timeout = aiohttp.ClientTimeout(total=45, connect=15)
+    
+    try:
+        # يفضل لاحقاً جعل الـ session عامة (Global)، لكن الآن سنصلحها هكذا:
+        async with aiohttp.ClientSession(timeout=timeout) as session:
+            async with session.post(endpoint, json=records, headers=headers) as response:
+                if response.status in [200, 201, 204]:
+                    return True
+                else:
+                    error_text = await response.text()
+                    logging.error(f"❌ فشل الرفع إلى {table_name}! الحالة: {response.status}")
+                    logging.error(f"📝 رسالة الخطأ: {error_text}")
+                    return False
+    except asyncio.TimeoutError:
+        logging.error("⏳ نفد الوقت (Timeout) سوبابيس لم ترد، سيتم التخطي لإكمال الباقي.")
+        return False
+    except Exception as e:
+        logging.error(f"⚠️ خطأ تقني أثناء محاولة الرفع: {str(e)}")
+        return False
+
+
 async def fetch_klines1(session, symbol, interval, limit=350): # تم رفع الحد إلى 300 لحساب EMA 200 بأمان
     url = f"https://data-api.binance.vision/api/v3/klines?symbol={symbol}&interval={interval}&limit={limit}"
     try:
@@ -2191,7 +2222,7 @@ async def update_crypto_market_data():
             print(f"📦 جاري رفع {len(final_records)} عملة إلى سوبابيس...")
             for i in range(0, len(final_records), 50): 
                 batch = final_records[i:i + 50]
-                success = await async_manual_upsert1("crypto_market_simulation", batch)
+                success = await async_manual_upsert("crypto_market_simulation", batch)
                 
                 if success:
                     logging.info(f"✅ تم حقن الدفعة {i//50 + 1} بنجاح")
@@ -2702,7 +2733,7 @@ async def forensic_investigation_cycle(active_investigations=None):
             # ⏳ العداد الزمني للمحقق: سينتظر 5 دقائق (300 ثانية) قبل التفتيش القادم
             # (إذا كنت تريدها كل ساعة بالتمام، اجعل الرقم 3600 بدلاً من 300)
             print("⏳ العداد الزمني للمحقق ينطلق الآن... سيبدأ التفتيش القادم بعد 5 دقائق.")
-            await asyncio.sleep(300) 
+            await asyncio.sleep(150) 
             
         except Exception as e:
             logging.error(f"⚠️ خطأ في دورة المحقق الجنائي: {e}")

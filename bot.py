@@ -2641,20 +2641,18 @@ async def run_forensic_autopsy(symbol, change_percent, explosion_time_ms):
             
             results = await asyncio.gather(*upload_tasks)
             
+            results = await asyncio.gather(*upload_tasks)
+            
             if all(results):
                 print(f"🎉 [المحقق كونان] تم إغلاق القضية وأرشفة جميع ملفات {symbol} بالكامل في سوبابيس.")
-                # ==========================================
-                print(f"🧬 [تسليم الراية] جاري إرسال القضية ({report_id}) لغرفة الذكاء الاصطناعي...")
-                # استخدمنا المرجع (task) لحماية المهمة من الموت المفاجئ
-                task = asyncio.create_task(safe_ai_handover(report_id, symbol))
-                # ==========================================
             else:
                 print(f"⚠️ [المحقق كونان] تم رفع الرئيسي، لكن حدث نقص في رفع بعض الأدلة الفرعية لعملة {symbol}.")
-
+        else:
+            print(f"❌ [المحقق كونان] فشل أرشفة الجدول الرئيسي (Liquidity) لـ {symbol}. تم إلغاء رفع البقية لحماية الترابط.")
+            
     except Exception as e:
         print(f"\n☠️ [المحقق كونان] انهيار أثناء تشريح {symbol}: {str(e)}")
         logging.error(traceback.format_exc())
-        
 
 import time
 import asyncio
